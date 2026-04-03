@@ -1,6 +1,8 @@
 local M = {}
 
 local lpm = loadstring(readfile("lpm/init.lua"))()
+lpm("update", "Zeroevience/ClientInfo")
+
 local client = lpm("require", "Zeroevience/ClientInfo")
 
 local flying = false
@@ -25,29 +27,42 @@ function M.fly(method)
 
     flying = true
 
-    if method == "bypass" then
-        bodyVel = Instance.new("BodyVelocity")
-        bodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-        bodyVel.Velocity = Vector3.new(0, 0, 0)
-        bodyVel.Parent = root
+    bodyVel = Instance.new("BodyVelocity")
+    bodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bodyVel.Velocity = Vector3.zero
+    bodyVel.Parent = root
 
-        flyConn = game:GetService("RunService").Heartbeat:Connect(function()
-            if not flying then return end
+    flyConn = game:GetService("RunService").Heartbeat:Connect(function()
+        if not flying then return end
 
-            local cam = workspace.CurrentCamera
-            local move = humanoid.MoveDirection
+        local cam = workspace.CurrentCamera
+        local move = humanoid.MoveDirection
 
-            bodyVel.Velocity =
-                (cam.CFrame.LookVector * move.Z +
-                 cam.CFrame.RightVector * move.X) * 60
-        end)
+        local direction =
+            (cam.CFrame.LookVector * move.Z) +
+            (cam.CFrame.RightVector * move.X)
 
-    else
-        bodyVel = Instance.new("BodyVelocity")
-        bodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-        bodyVel.Velocity = Vector3.new(0, 50, 0)
-        bodyVel.Parent = root
-    end
+        local y = 0
+        local UIS = game:GetService("UserInputService")
+
+        if UIS:IsKeyDown(Enum.KeyCode.E) then
+            y = 1
+        elseif UIS:IsKeyDown(Enum.KeyCode.Q) then
+            y = -1
+        end
+
+        direction = direction + Vector3.new(0, y, 0)
+
+        if direction.Magnitude > 0 then
+            direction = direction.Unit
+        end
+
+        if method == "bypass" then
+            bodyVel.Velocity = direction * 90
+        else
+            bodyVel.Velocity = direction * 60
+        end
+    end)
 
     return "Flying"
 end
