@@ -20,7 +20,7 @@ function M.speed(speed)
     return "Character not ready"
 end
 
-function M.fly(method)
+function M.fly(method, speed)
     if flying then return "Already flying" end
 
     local char = client.Character
@@ -40,6 +40,8 @@ function M.fly(method)
 
     local UIS = game:GetService("UserInputService")
     local RS = game:GetService("RunService")
+
+    local flySpeed = tonumber(speed) or ((method == "bypass") and 90 or 60)
 
     flyConn = RS.Heartbeat:Connect(function()
         if not flying then return end
@@ -73,8 +75,7 @@ function M.fly(method)
             direction = direction.Unit
         end
 
-        local speed = (method == "bypass") and 90 or 60
-        bodyVel.Velocity = direction * speed
+        bodyVel.Velocity = direction * flySpeed
     end)
 
     return "Flying"
