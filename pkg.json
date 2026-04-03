@@ -2,5 +2,7 @@
   "name": "CMP",
   "entry": "init.lua",
   "files": ["init.lua"],
-  "dependencies": {}
+  "dependencies": {
+    "Zeroevience/ClientInfo": "latest"
+  }
 }
