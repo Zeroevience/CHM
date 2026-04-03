@@ -9,6 +9,9 @@ local flying = false
 local flyConn = nil
 local bodyVel = nil
 
+local noclip = false
+local noclipConn = nil
+
 function M.speed(speed)
     client.Character.Humanoid.WalkSpeed = speed
     return "Done"
@@ -44,7 +47,7 @@ function M.fly(method)
         local right = cam.CFrame.RightVector
 
         local direction =
-            (forward * -move.Z) +
+            (forward * move.Z) +
             (right * move.X)
 
         local y = 0
@@ -87,6 +90,49 @@ function M.unfly()
     end
 
     return "Stopped flying"
+end
+
+function M.noclip()
+    if noclip then return "Already noclipping" end
+
+    noclip = true
+
+    noclipConn = game:GetService("RunService").Stepped:Connect(function()
+        if not noclip then return end
+
+        local char = client.Character
+        if not char then return end
+
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
+
+    return "Noclip enabled"
+end
+
+function M.clip()
+    if not noclip then return "Not noclipping" end
+
+    noclip = false
+
+    if noclipConn then
+        noclipConn:Disconnect()
+        noclipConn = nil
+    end
+
+    local char = client.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+
+    return "Noclip disabled"
 end
 
 return M
