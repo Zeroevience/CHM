@@ -32,18 +32,22 @@ function M.fly(method)
     bodyVel.Velocity = Vector3.zero
     bodyVel.Parent = root
 
+    local UIS = game:GetService("UserInputService")
+
     flyConn = game:GetService("RunService").Heartbeat:Connect(function()
         if not flying then return end
 
         local cam = workspace.CurrentCamera
         local move = humanoid.MoveDirection
 
+        local forward = cam.CFrame.LookVector
+        local right = cam.CFrame.RightVector
+
         local direction =
-            (cam.CFrame.LookVector * move.Z) +
-            (cam.CFrame.RightVector * move.X)
+            (forward * -move.Z) +
+            (right * move.X)
 
         local y = 0
-        local UIS = game:GetService("UserInputService")
 
         if UIS:IsKeyDown(Enum.KeyCode.E) then
             y = 1
