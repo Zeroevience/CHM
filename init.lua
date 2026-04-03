@@ -197,7 +197,7 @@ function M.breakjoints(nofall)
 
     if nofallEnabled then
         RunService.Heartbeat:Connect(function()
-            if not broken or animPlaying then return end
+            if not broken or AnimSystem.playing then return end
 
             local torso = Parts["Torso"] or Parts["UpperTorso"]
             if not torso then return end
