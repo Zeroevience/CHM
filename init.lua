@@ -5,7 +5,7 @@ lpm("install", "Zeroevience/ClientInfo")
 local client = lpm("require", "Zeroevience/ClientInfo")
 function M.speed(...)
     local args=...
-    client.Character.Humanoid.Walkspeed = ...[1]
+    client.Character.Humanoid.Walkspeed = args[1]
     return "Done"
 end
 
