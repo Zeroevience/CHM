@@ -11,6 +11,7 @@ local bodyVel = nil
 
 local noclip = false
 local noclipConn = nil
+local currentAnimConn = nil
 
 local broken = false
 local nofallEnabled = false
@@ -210,9 +211,15 @@ function M.breakjoints(nofall)
     return "Joints broken"
 end
 
+
 function M.playanimation(data)
     if not broken then
         return "Break joints first"
+    end
+
+    if currentAnimConn then
+        currentAnimConn:Disconnect()
+        currentAnimConn = nil
     end
 
     animPlaying = true
@@ -223,11 +230,11 @@ function M.playanimation(data)
     local currentKeyframe = 1
     local t = 0
 
-    local conn
-    conn = RunService.Heartbeat:Connect(function(dt)
+    currentAnimConn = RunService.Heartbeat:Connect(function(dt)
         if currentKeyframe >= #data.Keyframes then
             animPlaying = false
-            conn:Disconnect()
+            currentAnimConn:Disconnect()
+            currentAnimConn = nil
             return
         end
 
@@ -241,11 +248,12 @@ function M.playanimation(data)
 
         for partName, cf1 in pairs(kf1.Poses) do
             local cf2 = kf2.Poses[partName]
+            if not cf2 then continue end
 
             for _, jointData in pairs(savedJoints) do
                 local part = jointData.Part
 
-                if part and part.Name == partName and cf2 then
+                if part and part.Name == partName then
                     local animCF = cf1:Lerp(cf2, alpha)
                     local final = torso.CFrame * jointData.C0 * animCF * jointData.C1:Inverse()
 
