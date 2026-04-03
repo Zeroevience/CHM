@@ -5,6 +5,13 @@ lpm("update", "Zeroevience/ClientInfo")
 
 local client = lpm("require", "Zeroevience/ClientInfo")
 
+_G.__ANIM_SYSTEM = _G.__ANIM_SYSTEM or {
+    currentConn = nil,
+    playing = false
+}
+
+local AnimSystem = _G.__ANIM_SYSTEM
+
 local flying = false
 local flyConn = nil
 local bodyVel = nil
@@ -217,11 +224,12 @@ function M.playanimation(data)
         return "Break joints first"
     end
 
-    if currentAnimConn then
-        currentAnimConn:Disconnect()
-        currentAnimConn = nil
+    if AnimSystem.currentConn then
+        AnimSystem.currentConn:Disconnect()
+        AnimSystem.currentConn = nil
     end
 
+    AnimSystem.playing = true
     animPlaying = true
 
     local torso = Parts["Torso"] or Parts["UpperTorso"]
@@ -230,11 +238,16 @@ function M.playanimation(data)
     local currentKeyframe = 1
     local t = 0
 
-    currentAnimConn = RunService.Heartbeat:Connect(function(dt)
+    AnimSystem.currentConn = RunService.Heartbeat:Connect(function(dt)
         if currentKeyframe >= #data.Keyframes then
+            AnimSystem.playing = false
             animPlaying = false
-            currentAnimConn:Disconnect()
-            currentAnimConn = nil
+
+            if AnimSystem.currentConn then
+                AnimSystem.currentConn:Disconnect()
+                AnimSystem.currentConn = nil
+            end
+
             return
         end
 
