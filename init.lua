@@ -10,6 +10,15 @@ _G.__ANIM_SYSTEM = _G.__ANIM_SYSTEM or {
     playing = false
 }
 
+_G.__RIG_SYSTEM = _G.__RIG_SYSTEM or {
+    joints = {},
+    parts = {},
+    broken = false,
+    playing = false,
+    conn = nil
+}
+
+local SYS = _G.__RIG_SYSTEM
 local AnimSystem = _G.__ANIM_SYSTEM
 
 local flying = false
@@ -166,17 +175,19 @@ function M.breakjoints(nofall)
     local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
     if not torso then return "No torso" end
 
-    nofallEnabled = nofall or false
+    SYS.joints = {}
+    SYS.parts = {}
 
-    local joints = {
-        "Right Shoulder", "Left Shoulder",
-        "Right Hip", "Left Hip"
+    local jointNames = {
+        ["Right Shoulder"] = true,
+        ["Left Shoulder"] = true,
+        ["Right Hip"] = true,
+        ["Left Hip"] = true
     }
 
-    for _, name in ipairs(joints) do
-        local joint = torso:FindFirstChild(name)
-        if joint and joint:IsA("Motor6D") then
-            savedJoints[name] = {
+    for _, joint in ipairs(torso:GetChildren()) do
+        if joint:IsA("Motor6D") and jointNames[joint.Name] then
+            SYS.joints[joint.Part1.Name] = {
                 C0 = joint.C0,
                 C1 = joint.C1,
                 Part = joint.Part1
@@ -189,28 +200,26 @@ function M.breakjoints(nofall)
         if v:IsA("BasePart") then
             v.CanCollide = false
             v.Massless = true
-            Parts[v.Name] = v
+            SYS.parts[v.Name] = v
         end
     end
 
-    broken = true
+    SYS.broken = true
 
-    if nofallEnabled then
+    if nofall then
         RunService.Heartbeat:Connect(function()
-            if not broken or AnimSystem.playing then return end
+            if not SYS.broken or SYS.playing then return end
 
-            local torso = Parts["Torso"] or Parts["UpperTorso"]
+            local torso = SYS.parts["Torso"] or SYS.parts["UpperTorso"]
             if not torso then return end
 
-            for _, data in pairs(savedJoints) do
+            for _, data in pairs(SYS.joints) do
                 local part = data.Part
-                if part then
-                    local target = torso.CFrame * data.C0 * data.C1:Inverse()
-                    part.CFrame = part.CFrame:Lerp(target, 0.3)
+                local target = torso.CFrame * data.C0 * data.C1:Inverse()
 
-                    part.Velocity = Vector3.zero
-                    part.RotVelocity = Vector3.zero
-                end
+                part.CFrame = part.CFrame:Lerp(target, 0.3)
+                part.Velocity = Vector3.zero
+                part.RotVelocity = Vector3.zero
             end
         end)
     end
@@ -218,36 +227,29 @@ function M.breakjoints(nofall)
     return "Joints broken"
 end
 
-
 function M.playanimation(data)
-    if not broken then
+    if not SYS.broken then
         return "Break joints first"
     end
 
-    if AnimSystem.currentConn then
-        AnimSystem.currentConn:Disconnect()
-        AnimSystem.currentConn = nil
+    if SYS.conn then
+        SYS.conn:Disconnect()
+        SYS.conn = nil
     end
 
-    AnimSystem.playing = true
-    animPlaying = true
+    SYS.playing = true
 
-    local torso = Parts["Torso"] or Parts["UpperTorso"]
+    local torso = SYS.parts["Torso"] or SYS.parts["UpperTorso"]
     if not torso then return "No torso" end
 
     local currentKeyframe = 1
     local t = 0
 
-    AnimSystem.currentConn = RunService.Heartbeat:Connect(function(dt)
+    SYS.conn = RunService.Heartbeat:Connect(function(dt)
         if currentKeyframe >= #data.Keyframes then
-            AnimSystem.playing = false
-            animPlaying = false
-
-            if AnimSystem.currentConn then
-                AnimSystem.currentConn:Disconnect()
-                AnimSystem.currentConn = nil
-            end
-
+            SYS.playing = false
+            SYS.conn:Disconnect()
+            SYS.conn = nil
             return
         end
 
@@ -263,19 +265,17 @@ function M.playanimation(data)
             local cf2 = kf2.Poses[partName]
             if not cf2 then continue end
 
-            for _, jointData in pairs(savedJoints) do
-                local part = jointData.Part
+            local joint = SYS.joints[partName]
+            if not joint then continue end
 
-                if part and part.Name == partName then
-                    local animCF = cf1:Lerp(cf2, alpha)
-                    local final = torso.CFrame * jointData.C0 * animCF * jointData.C1:Inverse()
+            local part = joint.Part
 
-                    part.CFrame = part.CFrame:Lerp(final, 0.4)
+            local animCF = cf1:Lerp(cf2, alpha)
+            local final = torso.CFrame * joint.C0 * animCF * joint.C1:Inverse()
 
-                    part.Velocity = Vector3.zero
-                    part.RotVelocity = Vector3.zero
-                end
-            end
+            part.CFrame = part.CFrame:Lerp(final, 0.4)
+            part.Velocity = Vector3.zero
+            part.RotVelocity = Vector3.zero
         end
 
         if t >= duration then
@@ -286,5 +286,4 @@ function M.playanimation(data)
 
     return "Playing animation"
 end
-
 return M
