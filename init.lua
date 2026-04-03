@@ -13,16 +13,19 @@ local noclip = false
 local noclipConn = nil
 
 function M.speed(speed)
-    client.Character.Humanoid.WalkSpeed = speed
-    return "Done"
+    if client.Character and client.Character:FindFirstChildOfClass("Humanoid") then
+        client.Character.Humanoid.WalkSpeed = speed
+        return "Done"
+    end
+    return "Character not ready"
 end
 
 function M.fly(method)
     if flying then return "Already flying" end
 
     local char = client.Character
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    local root = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+    local root = char and char:FindFirstChild("HumanoidRootPart")
 
     if not root or not humanoid then
         return "Character not ready"
@@ -36,39 +39,42 @@ function M.fly(method)
     bodyVel.Parent = root
 
     local UIS = game:GetService("UserInputService")
+    local RS = game:GetService("RunService")
 
-    flyConn = game:GetService("RunService").Heartbeat:Connect(function()
+    flyConn = RS.Heartbeat:Connect(function()
         if not flying then return end
 
         local cam = workspace.CurrentCamera
-        local move = humanoid.MoveDirection
+        local direction = Vector3.zero
 
-        local forward = cam.CFrame.LookVector
-        local right = cam.CFrame.RightVector
-
-        local direction =
-            (forward * move.Z) +
-            (right * move.X)
+        if UIS:IsKeyDown(Enum.KeyCode.W) then
+            direction += cam.CFrame.LookVector
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then
+            direction -= cam.CFrame.LookVector
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then
+            direction -= cam.CFrame.RightVector
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then
+            direction += cam.CFrame.RightVector
+        end
 
         local y = 0
-
         if UIS:IsKeyDown(Enum.KeyCode.E) then
             y = 1
         elseif UIS:IsKeyDown(Enum.KeyCode.Q) then
             y = -1
         end
 
-        direction = direction + Vector3.new(0, y, 0)
+        direction += Vector3.new(0, y, 0)
 
         if direction.Magnitude > 0 then
             direction = direction.Unit
         end
 
-        if method == "bypass" then
-            bodyVel.Velocity = direction * 90
-        else
-            bodyVel.Velocity = direction * 60
-        end
+        local speed = (method == "bypass") and 90 or 60
+        bodyVel.Velocity = direction * speed
     end)
 
     return "Flying"
